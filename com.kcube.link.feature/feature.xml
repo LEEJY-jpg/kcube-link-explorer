@@ -3,7 +3,8 @@
       id="com.kcube.link.feature"
       label="KCube Link Explorer"
       version="1.0.0.qualifier"
-      provider-name="KCube">
+      provider-name="KCube"
+      image="feature.png">
 
    <description>
       Package Explorer-like view that links projects by drag and drop.
