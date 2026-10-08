@@ -5,6 +5,7 @@ import java.util.List;
 import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.jface.util.IPropertyChangeListener;
 import org.eclipse.jface.util.PropertyChangeEvent;
+import org.eclipse.jface.viewers.TreePathViewerSorter;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.ui.IPartListener2;
@@ -23,7 +24,7 @@ import org.eclipse.ui.navigator.IExtensionStateModel;
  * <p>
  * Working Set 자체는 워크벤치 전역({@code IWorkingSetManager})에서 관리되므로 같은 Working Set 이 나타나고,
  * 어떤 것을 보여줄지는 {@link PackageExplorerBridge} 로 Package Explorer 에서 읽어 온다.
- * Package Explorer 를 읽을 수 없으면 등록된 모든 Working Set 을 보여준다.
+ * Package Explorer 를 읽을 수 없으면 최상위에 어울리는 Working Set 을 전부 보여준다.
  * <p>
  * 기본 {@code CommonNavigator} 는 선택된 Working Set 이 하나도 없으면 "Top Level Elements &gt; Working Sets"
  * 로 바꿔도 뷰어 입력을 바꾸지 않는다(Project Explorer 는 전용 보조 코드가 있다).
@@ -40,6 +41,9 @@ public class LinkExplorerView extends CommonNavigator {
 
 	/** Working Set 콘텐츠 확장의 상태 모델 */
 	private IExtensionStateModel _state;
+
+	/** Package Explorer 순서로 Working Set 을 정렬하는 정렬기 */
+	private OrderedWorkingSetSorter _sorter;
 
 	/** 이 뷰가 설정한 Working Set 묶음 입력 (Projects 표시이거나 사용자가 직접 골랐으면 null) */
 	private IWorkingSet _managedInput;
@@ -104,6 +108,10 @@ public class LinkExplorerView extends CommonNavigator {
 		if (_state == null) {
 			return;
 		}
+		if (getCommonViewer().getComparator() instanceof TreePathViewerSorter base) {
+			_sorter = new OrderedWorkingSetSorter(base);
+			getCommonViewer().setSorter(_sorter);
+		}
 		_state.addPropertyChangeListener(_modeListener);
 		PlatformUI.getWorkbench().getWorkingSetManager().addPropertyChangeListener(_managerListener);
 		getSite().getPage().addPartListener(_partListener);
@@ -138,7 +146,7 @@ public class LinkExplorerView extends CommonNavigator {
 
 	/**
 	 * Package Explorer 의 최상위 표시 방식과 활성 Working Set 을 읽어 뷰어 입력에 반영한다.
-	 * Package Explorer 를 읽을 수 없으면 등록된 모든 Working Set 을 보여준다.
+	 * Package Explorer 를 읽을 수 없으면 최상위에 어울리는 Working Set 을 전부 보여준다.
 	 * <p>
 	 * 이전에 반영한 상태와 같으면 입력을 다시 설정하지 않는다(트리 펼침 상태 유지).
 	 * 따라서 사용자가 이 뷰에서 직접 고른 Working Set 은 Package Explorer 가 바뀌기 전까지 유지된다.
@@ -154,7 +162,7 @@ public class LinkExplorerView extends CommonNavigator {
 		PackageExplorerBridge.Snapshot snapshot = _packageExplorer == null ? null
 				: PackageExplorerBridge.read(_packageExplorer);
 		if (snapshot == null) {
-			snapshot = new PackageExplorerBridge.Snapshot(true, List.of(allWorkingSets()));
+			snapshot = PackageExplorerBridge.fallback();
 		}
 		if (snapshot.equals(_applied)) {
 			if (refreshIfSame) {
@@ -175,6 +183,9 @@ public class LinkExplorerView extends CommonNavigator {
 		CommonViewer viewer = getCommonViewer();
 		_applying = true;
 		try {
+			if (_sorter != null) {
+				_sorter.setOrder(snapshot.activeWorkingSets(), snapshot.sortingEnabled());
+			}
 			_state.setBooleanProperty(SHOW_TOP_LEVEL_WORKING_SETS, snapshot.workingSetsAsRoots());
 			if (snapshot.workingSetsAsRoots()) {
 				IWorkingSetManager manager = PlatformUI.getWorkbench().getWorkingSetManager();
@@ -217,15 +228,6 @@ public class LinkExplorerView extends CommonNavigator {
 	}
 
 	/**
-	 * 워크벤치에 등록된 모든 Working Set.
-	 *
-	 * @return Working Set 배열
-	 */
-	private static IWorkingSet[] allWorkingSets() {
-		return PlatformUI.getWorkbench().getWorkingSetManager().getWorkingSets();
-	}
-
-	/**
 	 * 뷰 메뉴에서 Top Level Elements 를 사용자가 바꿨을 때 입력을 맞춘다.
 	 * Working Set 으로 바꾸면 Package Explorer 의 활성 Working Set(없으면 전체)을 보여준다.
 	 *
@@ -237,12 +239,13 @@ public class LinkExplorerView extends CommonNavigator {
 		}
 		PackageExplorerBridge.Snapshot snapshot = _packageExplorer == null ? null
 				: PackageExplorerBridge.read(_packageExplorer);
-		List<IWorkingSet> sets = snapshot != null && !snapshot.activeWorkingSets().isEmpty()
-				? snapshot.activeWorkingSets()
-				: List.of(allWorkingSets());
+		if (snapshot == null || snapshot.activeWorkingSets().isEmpty()) {
+			snapshot = PackageExplorerBridge.fallback();
+		}
 		boolean showing = _state.getBooleanProperty(SHOW_TOP_LEVEL_WORKING_SETS);
 		// 사용자의 선택이므로 이후 Package Explorer 가 바뀌기 전까지 유지되도록 마지막 반영 상태도 갱신한다.
-		_applied = new PackageExplorerBridge.Snapshot(showing, sets);
+		_applied = new PackageExplorerBridge.Snapshot(showing, snapshot.activeWorkingSets(),
+				snapshot.sortingEnabled());
 		apply(_applied);
 	}
 }

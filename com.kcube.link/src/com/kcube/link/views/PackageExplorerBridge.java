@@ -1,12 +1,17 @@
 package com.kcube.link.views;
 
 import java.lang.reflect.Method;
+import java.util.Arrays;
+import java.util.Comparator;
 import java.util.List;
 
+import org.eclipse.core.resources.IProject;
+import org.eclipse.core.runtime.IAdaptable;
 import org.eclipse.jface.util.IPropertyChangeListener;
 import org.eclipse.ui.IViewPart;
 import org.eclipse.ui.IWorkbenchPage;
 import org.eclipse.ui.IWorkingSet;
+import org.eclipse.ui.PlatformUI;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -24,6 +29,9 @@ final class PackageExplorerBridge {
 	/** Package Explorer 가 Working Set 을 최상위로 표시하는 모드 값 ({@code WORKING_SETS_AS_ROOTS}) */
 	private static final int WORKING_SETS_AS_ROOTS = 2;
 
+	/** JDT 의 Other Projects Working Set ID */
+	private static final String OTHERS_ID = "org.eclipse.jdt.internal.ui.OthersWorkingSet";
+
 	/** 로거 */
 	private static final Logger _log = LoggerFactory.getLogger(PackageExplorerBridge.class);
 
@@ -35,8 +43,9 @@ final class PackageExplorerBridge {
 	 *
 	 * @param workingSetsAsRoots Working Set 을 최상위로 보여주는지 여부
 	 * @param activeWorkingSets  활성 Working Set (표시 순서대로)
+	 * @param sortingEnabled     Package Explorer 가 Working Set 을 이름순으로 정렬하는지 여부 (false 면 활성 목록 순서)
 	 */
-	record Snapshot(boolean workingSetsAsRoots, List<IWorkingSet> activeWorkingSets) {
+	record Snapshot(boolean workingSetsAsRoots, List<IWorkingSet> activeWorkingSets, boolean sortingEnabled) {
 	}
 
 	/**
@@ -60,13 +69,57 @@ final class PackageExplorerBridge {
 			Object model = workingSetModel(part);
 			int mode = (Integer) part.getClass().getMethod("getRootMode").invoke(part);
 			IWorkingSet[] active = (IWorkingSet[]) model.getClass().getMethod("getActiveWorkingSets").invoke(model);
-			return new Snapshot(mode == WORKING_SETS_AS_ROOTS, List.of(active));
+			boolean sorted = (Boolean) model.getClass().getMethod("isSortingEnabled").invoke(model);
+			return new Snapshot(mode == WORKING_SETS_AS_ROOTS, List.of(active), sorted);
 		} catch (ReflectiveOperationException | RuntimeException e) {
 			if (_log.isDebugEnabled()) {
 				_log.debug("Cannot read the Package Explorer state", e);
 			}
 			return null;
 		}
+	}
+
+	/**
+	 * Package Explorer 를 읽을 수 없을 때 대신 쓸 Working Set 후보를 만든다.
+	 * Package Explorer 와 같은 기준으로 최상위에 어울리지 않는 것(예: Java Main/Test Sources)을 뺀다.
+	 * 순서는 Package Explorer 의 기본 배치처럼 Other Projects 를 맨 앞에 두고 나머지는 이름순이다.
+	 *
+	 * @return 최상위 Working Set 후보
+	 */
+	static Snapshot fallback() {
+		IWorkingSet[] all = PlatformUI.getWorkbench().getWorkingSetManager().getWorkingSets();
+		List<IWorkingSet> sets = Arrays.stream(all).filter(PackageExplorerBridge::isTopLevelCandidate)
+				.sorted(Comparator.comparing((IWorkingSet ws) -> !OTHERS_ID.equals(ws.getId()))
+						.thenComparing(IWorkingSet::getLabel, String.CASE_INSENSITIVE_ORDER))
+				.toList();
+		return new Snapshot(true, sets, false);
+	}
+
+	/**
+	 * JDT {@code WorkingSetModel.isSupportedAsTopLevelElement} 와 같은 기준으로 최상위 후보인지 판단한다.
+	 *
+	 * @param ws 검사할 Working Set
+	 * @return 후보이면 true
+	 */
+	static boolean isTopLevelCandidate(IWorkingSet ws) {
+		String id = ws.getId();
+		if (OTHERS_ID.equals(id) || "org.eclipse.jdt.ui.JavaWorkingSetPage".equals(id)
+				|| "org.eclipse.ui.resourceWorkingSetPage".equals(id)) {
+			return true;
+		}
+		if ("org.eclipse.jdt.internal.ui.DynamicSourcesWorkingSet".equals(id)) {
+			return false;
+		}
+		if (ws.isSelfUpdating() || ws.isAggregateWorkingSet()) {
+			return false;
+		}
+		for (IAdaptable element : ws.getElements()) {
+			IProject project = element.getAdapter(IProject.class);
+			if (project != null && project.exists()) {
+				return true;
+			}
+		}
+		return false;
 	}
 
 	/**
