@@ -1,8 +1,11 @@
 package com.kcube.link.views;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.eclipse.core.resources.ResourcesPlugin;
+import org.eclipse.core.runtime.IStatus;
+import org.eclipse.core.runtime.Status;
 import org.eclipse.jface.util.IPropertyChangeListener;
 import org.eclipse.jface.util.PropertyChangeEvent;
 import org.eclipse.jface.viewers.TreePathViewerSorter;
@@ -18,6 +21,8 @@ import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.navigator.CommonNavigator;
 import org.eclipse.ui.navigator.CommonViewer;
 import org.eclipse.ui.navigator.IExtensionStateModel;
+
+import com.kcube.link.Activator;
 
 /**
  * Link Explorer 뷰. Package Explorer 의 Working Set 설정(최상위 표시 방식과 활성 Working Set)을 따라 보여준다.
@@ -161,6 +166,7 @@ public class LinkExplorerView extends CommonNavigator {
 		hookPackageExplorer();
 		PackageExplorerBridge.Snapshot snapshot = _packageExplorer == null ? null
 				: PackageExplorerBridge.read(_packageExplorer);
+		boolean fromPackageExplorer = snapshot != null;
 		if (snapshot == null) {
 			snapshot = PackageExplorerBridge.fallback();
 		}
@@ -172,6 +178,26 @@ public class LinkExplorerView extends CommonNavigator {
 		}
 		_applied = snapshot;
 		apply(snapshot);
+		logApplied(snapshot, fromPackageExplorer);
+	}
+
+	/**
+	 * 반영한 상태를 Eclipse 로그(.metadata/.log)에 정보 수준으로 남긴다. 동기화가 기대와 다를 때 원인을 찾는 용도다.
+	 *
+	 * @param snapshot            반영한 상태
+	 * @param fromPackageExplorer true 면 Package Explorer 에서 읽은 값, false 면 대체 목록
+	 */
+	private void logApplied(PackageExplorerBridge.Snapshot snapshot, boolean fromPackageExplorer) {
+		Activator activator = Activator.getDefault();
+		if (activator == null) {
+			return;
+		}
+		String order = snapshot.activeWorkingSets().stream().map(IWorkingSet::getLabel)
+				.collect(Collectors.joining(", "));
+		activator.getLog().log(new Status(IStatus.INFO, Activator.PLUGIN_ID,
+				"Link Explorer working sets: source=" + (fromPackageExplorer ? "Package Explorer" : "fallback")
+						+ ", workingSetsAsRoots=" + snapshot.workingSetsAsRoots() + ", sorter="
+						+ (_sorter != null) + ", order=[" + order + "]"));
 	}
 
 	/**
@@ -184,7 +210,7 @@ public class LinkExplorerView extends CommonNavigator {
 		_applying = true;
 		try {
 			if (_sorter != null) {
-				_sorter.setOrder(snapshot.activeWorkingSets(), snapshot.sortingEnabled());
+				_sorter.setOrder(snapshot.activeWorkingSets());
 			}
 			_state.setBooleanProperty(SHOW_TOP_LEVEL_WORKING_SETS, snapshot.workingSetsAsRoots());
 			if (snapshot.workingSetsAsRoots()) {
@@ -244,8 +270,7 @@ public class LinkExplorerView extends CommonNavigator {
 		}
 		boolean showing = _state.getBooleanProperty(SHOW_TOP_LEVEL_WORKING_SETS);
 		// 사용자의 선택이므로 이후 Package Explorer 가 바뀌기 전까지 유지되도록 마지막 반영 상태도 갱신한다.
-		_applied = new PackageExplorerBridge.Snapshot(showing, snapshot.activeWorkingSets(),
-				snapshot.sortingEnabled());
+		_applied = new PackageExplorerBridge.Snapshot(showing, snapshot.activeWorkingSets());
 		apply(_applied);
 	}
 }

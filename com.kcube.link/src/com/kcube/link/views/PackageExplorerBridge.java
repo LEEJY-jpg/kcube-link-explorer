@@ -42,10 +42,10 @@ final class PackageExplorerBridge {
 	 * Package Explorer 의 어느 시점 상태.
 	 *
 	 * @param workingSetsAsRoots Working Set 을 최상위로 보여주는지 여부
-	 * @param activeWorkingSets  활성 Working Set (표시 순서대로)
-	 * @param sortingEnabled     Package Explorer 가 Working Set 을 이름순으로 정렬하는지 여부 (false 면 활성 목록 순서)
+	 * @param activeWorkingSets  활성 Working Set. Package Explorer 의 표시 순서 그대로다
+	 *                           (이름순 정렬을 켠 경우 JDT 가 목록 자체를 이미 정렬해서 돌려준다)
 	 */
-	record Snapshot(boolean workingSetsAsRoots, List<IWorkingSet> activeWorkingSets, boolean sortingEnabled) {
+	record Snapshot(boolean workingSetsAsRoots, List<IWorkingSet> activeWorkingSets) {
 	}
 
 	/**
@@ -69,8 +69,7 @@ final class PackageExplorerBridge {
 			Object model = workingSetModel(part);
 			int mode = (Integer) part.getClass().getMethod("getRootMode").invoke(part);
 			IWorkingSet[] active = (IWorkingSet[]) model.getClass().getMethod("getActiveWorkingSets").invoke(model);
-			boolean sorted = (Boolean) model.getClass().getMethod("isSortingEnabled").invoke(model);
-			return new Snapshot(mode == WORKING_SETS_AS_ROOTS, List.of(active), sorted);
+			return new Snapshot(mode == WORKING_SETS_AS_ROOTS, List.of(active));
 		} catch (ReflectiveOperationException | RuntimeException e) {
 			if (_log.isDebugEnabled()) {
 				_log.debug("Cannot read the Package Explorer state", e);
@@ -92,7 +91,7 @@ final class PackageExplorerBridge {
 				.sorted(Comparator.comparing((IWorkingSet ws) -> !OTHERS_ID.equals(ws.getId()))
 						.thenComparing(IWorkingSet::getLabel, String.CASE_INSENSITIVE_ORDER))
 				.toList();
-		return new Snapshot(true, sets, false);
+		return new Snapshot(true, sets);
 	}
 
 	/**

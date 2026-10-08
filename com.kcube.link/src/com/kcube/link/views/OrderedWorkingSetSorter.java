@@ -21,9 +21,6 @@ final class OrderedWorkingSetSorter extends TreePathViewerSorter {
 	/** Package Explorer 의 Working Set 순서 */
 	private List<IWorkingSet> _order = List.of();
 
-	/** true 면 순서 대신 원래 정렬기(이름순)를 쓴다 */
-	private boolean _byName;
-
 	/**
 	 * 정렬기를 만든다.
 	 *
@@ -36,12 +33,10 @@ final class OrderedWorkingSetSorter extends TreePathViewerSorter {
 	/**
 	 * 사용할 순서를 지정한다.
 	 *
-	 * @param order  Working Set 순서
-	 * @param byName true 면 이름순(원래 정렬기)을 쓴다
+	 * @param order Working Set 순서
 	 */
-	void setOrder(List<IWorkingSet> order, boolean byName) {
+	void setOrder(List<IWorkingSet> order) {
 		_order = order;
-		_byName = byName;
 	}
 
 	/**
@@ -64,7 +59,7 @@ final class OrderedWorkingSetSorter extends TreePathViewerSorter {
 	 */
 	@Override
 	public int compare(Viewer viewer, TreePath parentPath, Object e1, Object e2) {
-		if (!_byName && e1 instanceof IWorkingSet w1 && e2 instanceof IWorkingSet w2) {
+		if (e1 instanceof IWorkingSet w1 && e2 instanceof IWorkingSet w2) {
 			int i1 = _order.indexOf(w1);
 			int i2 = _order.indexOf(w2);
 			if (i1 >= 0 && i2 >= 0) {
