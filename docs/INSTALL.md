@@ -1,5 +1,26 @@
 # 설치 방법
 
+## GitHub 에서 바로 설치 (권장)
+
+빌드 없이 Eclipse 에서 업데이트 사이트 URL 로 설치할 수 있습니다.
+
+1. `Help > Install New Software...`
+2. `Work with:` 에 아래 URL 입력 후 Enter
+
+   ```
+   https://leejy-jpg.github.io/kcube-link-explorer/
+   ```
+
+3. `KCube Tools > KCube Link Explorer` 를 선택하고 설치합니다.
+4. 서명되지 않은 콘텐츠 경고가 나오면 `Install anyway` 를 선택하고 Eclipse 를 재시작합니다.
+
+- `main` 브랜치에 푸시되거나 `v*` 태그가 생성될 때마다 GitHub Actions 가 이 사이트를 갱신합니다.
+- 업데이트는 `Help > Check for Updates` 로 받을 수 있습니다.
+- jar 와 업데이트 사이트 zip 은 [Releases](https://github.com/LEEJY-jpg/kcube-link-explorer/releases) 에서도 받을 수 있습니다 (`v*` 태그 릴리스).
+- 아래 `dropins` 방식은 직접 빌드한 jar 를 쓰는 경우의 설치 방법입니다.
+
+## 직접 빌드한 jar 로 설치 (dropins)
+
 `dist/` 하위에 빌드된 jar(`com.kcube.link.kcube-link-explorer-1.0.0.jar`)가 있다고 가정합니다.
 빌드가 필요하면 [README](../README.md) 또는 `./build.sh`를 참고하세요.
 
@@ -55,7 +76,7 @@ cp dist/com.kcube.link.kcube-link-explorer-1.0.0.jar "$ECLIPSE_HOME/dropins/"
 
 ## 대안: 업데이트 사이트로 설치
 
-`dist/kcube-link-explorer-update-site-1.0.0.zip` 이 있다면 OS와 관계없이 사용할 수 있습니다.
+`dist/kcube-link-explorer-update-site-1.0.0.zip` (또는 Releases 에서 받은 zip) 이 있다면 OS와 관계없이 사용할 수 있습니다.
 
 1. `Help > Install New Software...`
 2. `Add... > Archive...` 에서 zip 파일 선택
@@ -71,4 +92,4 @@ cp dist/com.kcube.link.kcube-link-explorer-1.0.0.jar "$ECLIPSE_HOME/dropins/"
 ## 제거
 
 `dropins/` 의 `com.kcube.link*.jar` 를 삭제하고 Eclipse를 `-clean` 으로 재시작합니다.
-업데이트 사이트로 설치했다면 `Help > About Eclipse IDE > Installation Details` 에서 Uninstall 하세요.
+업데이트 사이트(URL 또는 zip)로 설치했다면 `Help > About Eclipse IDE > Installation Details` 에서 Uninstall 하세요.

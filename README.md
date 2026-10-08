@@ -20,8 +20,13 @@ Package Explorer 와 비슷한 Eclipse 뷰입니다. **프로젝트를 폴더/�
 
 ## 설치
 
-빌드 결과 jar 를 Eclipse `dropins` 에 복사하거나 업데이트 사이트 zip 으로 설치합니다.
-OS 별 상세 절차는 [docs/INSTALL.md](docs/INSTALL.md) 를 참고하세요.
+Eclipse 에서 `Help > Install New Software...` 의 `Work with:` 에 아래 업데이트 사이트 URL 을 입력해 설치합니다.
+
+```
+https://leejy-jpg.github.io/kcube-link-explorer/
+```
+
+직접 빌드한 jar 를 `dropins` 에 복사하거나 zip 으로 설치할 수도 있습니다. 상세 절차는 [docs/INSTALL.md](docs/INSTALL.md) 를 참고하세요.
 
 ## 사용 방법
 
@@ -87,7 +92,7 @@ Maven Tycho 4.0.13 기반 Eclipse 플러그인입니다.
 
 ## 알려진 제약
 
-- Windows 에서 심볼릭 링크는 관리자 권한/개발자 모드가 필요합니다. 아직 junction(`mklink /J`) 대체는 구현되지 않았습니다.
+- Windows 에서 심볼릭 링크는 관리자 권한/개발자 모드가 필요합니다. 권한이 없으면 junction(`mklink /J`)으로 자동 대체됩니다 (디렉터리 전용).
 - 링크된 프로젝트를 소스 폴더 안에 두면 두 번 컴파일될 수 있습니다.
 - OS 심볼릭 링크는 Git 에 링크 파일로 커밋됩니다. `.gitignore` 자동 처리는 아직 없습니다.
 
