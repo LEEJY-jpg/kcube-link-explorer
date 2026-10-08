@@ -30,17 +30,20 @@ jobs:
             exit 1
           }
 
-      - name: Collect artifacts
-        run: |
-          mkdir -p dist
-          VERSION="$(unzip -p com.kcube.link/target/com.kcube.link-*.jar META-INF/MANIFEST.MF | tr -d '\r' | sed -n 's/^Bundle-Version: *//p' | cut -d. -f1-3)"
-          cp com.kcube.link/target/com.kcube.link-*.jar "dist/com.kcube.link.kcube-link-explorer-${VERSION}.jar"
-          cp com.kcube.link.update-site/target/com.kcube.link.update-site-*.zip "dist/kcube-link-explorer-update-site-${VERSION}.zip"
-
       - uses: actions/upload-artifact@v4
         with:
           name: kcube-link-explorer
           path: dist/*
+
+      # p2 업데이트 사이트를 GitHub Pages(gh-pages 브랜치)로 게시한다.
+      # URL: https://leejy-jpg.github.io/kcube-link-explorer/
+      - name: Publish update site to GitHub Pages
+        if: github.event_name != 'pull_request' && (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v'))
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: com.kcube.link.update-site/target/repository
+          force_orphan: true
 
       - name: Publish GitHub release (tags only)
         if: startsWith(github.ref, 'refs/tags/v')
