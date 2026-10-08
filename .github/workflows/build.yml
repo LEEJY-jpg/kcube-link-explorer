@@ -1,0 +1,49 @@
+name: Build
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: maven
+
+      - name: Build (Tycho)
+        run: |
+          mvn -v
+          mvn -B -e clean verify 2>&1 | tee build.log || {
+            echo "::error title=Maven build failed::$(grep -E 'ERROR|Caused by|BUILD' build.log | head -25 | sed ':a;N;$!ba;s/\n/%0A/g')"
+            exit 1
+          }
+
+      - name: Collect artifacts
+        run: |
+          mkdir -p dist
+          VERSION="$(unzip -p com.kcube.link/target/com.kcube.link-*.jar META-INF/MANIFEST.MF | tr -d '\r' | sed -n 's/^Bundle-Version: *//p' | cut -d. -f1-3)"
+          cp com.kcube.link/target/com.kcube.link-*.jar "dist/com.kcube.link.kcube-link-explorer-${VERSION}.jar"
+          cp com.kcube.link.update-site/target/com.kcube.link.update-site-*.zip "dist/kcube-link-explorer-update-site-${VERSION}.zip"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: kcube-link-explorer
+          path: dist/*
+
+      - name: Publish GitHub release (tags only)
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/*

@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<feature
+      id="com.kcube.link.feature"
+      label="KCube Link Explorer"
+      version="1.0.0.qualifier"
+      provider-name="KCube">
+
+   <description>
+      Package Explorer-like view that links projects by drag and drop.
+   </description>
+
+   <copyright>
+      Copyright (c) KCube.
+   </copyright>
+
+   <license url="https://www.apache.org/licenses/LICENSE-2.0">
+      Licensed under the Apache License, Version 2.0.
+   </license>
+
+   <plugin
+         id="com.kcube.link"
+         download-size="0"
+         install-size="0"
+         version="0.0.0"
+         unpack="false"/>
+
+</feature>

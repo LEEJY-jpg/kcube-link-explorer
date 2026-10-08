@@ -2,30 +2,36 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-## Current state
+## Project layout
 
-This repository is a **design-stage skeleton** for an Eclipse plugin (PDE). It contains no source, `plugin.xml`, `MANIFEST.MF`, or build files yet — only an Eclipse `.project` stub (no natures/builders), `.settings/` (UTF-8 encoding), and the design document [docs/DEVELOPMENT_ko.md](docs/DEVELOPMENT_ko.md) (written in Korean). It is not a git repository. There are no build, lint, or test commands yet; the plugin is expected to be built through Eclipse PDE (and possibly Tycho later, via the planned `com.kcube.updatesite`).
+Eclipse plug-in built with Maven Tycho 4.0.13 (Eclipse 2024-12 target), structured like the sibling `kcube-markdown-viewer` (`~/git/kcube-markdown-viewer`). Modules: `com.kcube.link` (plug-in), `com.kcube.link.feature`, `com.kcube.link.update-site`. The version `major.minor.micro` must match across MANIFEST.MF, feature.xml and pom.xml. Design background (Korean) is in [docs/DEVELOPMENT_ko.md](docs/DEVELOPMENT_ko.md); the module names here follow the markdown viewer pattern rather than the `com.kcube.feature` / `com.kcube.updatesite` names in that doc.
 
-Treat `docs/DEVELOPMENT_ko.md` as the source of truth for intended design. It contains full draft `plugin.xml`, `MANIFEST.MF` and `ProjectLinkDropAssistant` code to copy from when scaffolding.
+## Build
+
+```bash
+./build.sh             # mvn -q -B clean verify; jar + update-site zip land in dist/
+./build.sh --install   # also copies the jar into $ECLIPSE_HOME/dropins (default /Applications/Eclipse.app/Contents/Eclipse)
+```
+
+Requires JDK 17 (`build.sh` sets `JAVA_HOME` via `/usr/libexec/java_home -v 17`; the default `mvn` here resolves to JDK 26, so export `JAVA_HOME` first when running `mvn` directly). There are no tests or linter; verification is `mvn clean verify` (what CI runs) plus trying the plug-in in Eclipse (Run As > Eclipse Application, or install to `dropins` and restart Eclipse with `-clean`; remove stale `com.kcube.link*` jars from `dropins/` first). Never kill the user's running Eclipse instances.
 
 ## What the plugin does
 
 "KCube Link Explorer" is a Package Explorer–like Eclipse view. Its core feature: **dragging a project onto a folder/project in the view creates a link to it** (OS symbolic link, or an Eclipse Linked Resource).
 
-## Architecture (planned)
+## Architecture
 
-- **View**: `com.kcube.link.views.explorer` is a plain `org.eclipse.ui.navigator.CommonNavigator` (Common Navigator Framework), registered under the `com.kcube.category` ("KCube") view category. No custom view class is needed.
-- **Content**: `viewerContentBinding` binds three content extensions to the viewer: JDT's `org.eclipse.jdt.java.ui.javaContent` (Java-view-like tree), `org.eclipse.ui.navigator.resourceContent`, and the plugin's own `com.kcube.link.navigatorContent`.
-- **Drag & drop**: `com.kcube.link.dnd.ProjectLinkDropAssistant` (extends `CommonDropAdapterAssistant`, registered as `com.kcube.link.dropAssistant` inside the navigator content). It adapts the drop target to `IContainer`, accepts only `LocalSelectionTransfer`, skips dropping a project onto itself, and schedules one `WorkspaceJob` per dropped project with the destination project as scheduling rule.
-- **Link strategy**: switched by the `USE_OS_SYMLINK` constant (to become a preference). OS symlink (`Files.createSymbolicLink` then `refreshLocal(DEPTH_ONE)`) is visible to Git/external build tools; Linked Resource (`IFolder.createLink`, stored in `.project`) is Eclipse-only but needs no Windows privileges.
-- **Planned package layout** (base package `com.kcube.link`): root (Activator, constants), `views`, `dnd`, `core` (UI-independent link create/remove logic — planned `LinkService`; the drop assistant should only delegate to it), `handlers` (Unlink context menu), `preferences`.
-- **Sibling bundles** (naming scheme): `com.kcube.markdown`, `com.kcube.feature`, `com.kcube.updatesite`.
+- **View**: `com.kcube.link.views.explorer` is a plain `org.eclipse.ui.navigator.CommonNavigator` (no custom view class), in the `com.kcube.category` ("KCube") category. All wiring is in `com.kcube.link/plugin.xml`: `viewerContentBinding` binds `org.eclipse.jdt.java.ui.javaContent`, `org.eclipse.ui.navigator.resourceContent` and `com.kcube.link.navigatorContent`; context menu id is `com.kcube.link.views.explorer#PopupMenu`.
+- **`core/LinkService`** (UI-independent): `validate` (self-link and circular-link checks via real paths), `link`, `unlink`, `isLink`. `LinkMode` is `SYMLINK` (`Files.createSymbolicLink` + `refreshLocal`) or `LINKED_RESOURCE` (`IFolder.createLink`, stored in `.project`).
+- **`dnd/ProjectLinkDropAssistant`** adapts the target to `IContainer`, validates every dragged project through `LinkService.validate`, and schedules one `WorkspaceJob` per project (rule = destination project). It only delegates to `LinkService`.
+- **`handlers/UnlinkHandler`** removes only the link itself. Symlinks are deleted with `Files.delete` (never `IResource.delete`, which could follow into the original project); Linked Resources use `IResource.delete`.
+- **`preferences/`**: `LinkPreferencePage` + `PreferenceInitializer` store the link mode under `Activator.PREF_LINK_MODE`; `Activator.getLinkMode()` reads it.
 
 ## Conventions and constraints
 
-- Bundle ID / project name: `com.kcube.link` (singleton); Bundle-Name `KCube Link Explorer`; execution environment `JavaSE-21`, so Java 21 features (e.g. pattern-matching `instanceof`) are used.
-- Logging uses SLF4J (`Import-Package: org.slf4j`) with `private static final Logger _log` and `if (_log.isXxxEnabled())` guards before log calls.
+- Bundle ID `com.kcube.link` (singleton); execution environment `JavaSE-17`, so Java 17 syntax (pattern-matching `instanceof`, switch arrows) is fine. Source uses tab indentation.
+- Logging uses SLF4J (via `Import-Package: org.slf4j`, not Require-Bundle) with `private static final Logger _log` and `if (_log.isXxxEnabled())` guards before log calls.
 - Javadoc on methods is written in Korean with `@param` descriptions; match this style.
 - `IPath.fromOSString` and `Status.error` require Eclipse 4.29+.
 - Known pitfalls to handle: circular links (A↔B) must be detected at drop time; a linked project placed inside a source folder gets compiled twice; Windows symlinks need admin/developer mode (fallback: junction `mklink /J` or Linked Resource); OS symlinks get committed to Git as links (consider `.gitignore`).
-- Pending work list is in section 7 of the design doc (LinkService extraction, Unlink handler, link-mode preference page, cycle check, feature/updatesite).
+- Remaining ideas from section 7 of the design doc are all implemented except junction (`mklink /J`) fallback on Windows and `.gitignore` handling for symlinks.

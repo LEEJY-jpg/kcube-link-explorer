@@ -124,7 +124,7 @@ Bundle-Name: KCube Link Explorer
 Bundle-SymbolicName: com.kcube.link;singleton:=true
 Bundle-Version: 1.0.0.qualifier
 Bundle-Vendor: KCube
-Bundle-RequiredExecutionEnvironment: JavaSE-21
+Bundle-RequiredExecutionEnvironment: JavaSE-17
 Require-Bundle: org.eclipse.ui,
  org.eclipse.ui.navigator,
  org.eclipse.ui.navigator.resources,
@@ -136,7 +136,7 @@ Import-Package: org.slf4j
 
 ---
 
-## 5. 드롭 어시스턴트 (Java 21)
+## 5. 드롭 어시스턴트 (Java 17)
 
 `com.kcube.link.dnd.ProjectLinkDropAssistant`
 
