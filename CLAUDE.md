@@ -17,6 +17,10 @@ Eclipse plug-in built with Maven Tycho 4.0.13 (Eclipse 2024-12 target), structur
 
 Requires JDK 17 (`build.sh` sets `JAVA_HOME` via `/usr/libexec/java_home -v 17`; the default `mvn` here resolves to JDK 26, so export `JAVA_HOME` first when running `mvn` directly). There are no tests or linter; verification is `mvn clean verify` (what CI runs) plus trying the plug-in in Eclipse (Run As > Eclipse Application, or install to `dropins` and restart Eclipse with `-clean`; remove stale `com.kcube.link*` jars from `dropins/` first). Never kill the user's running Eclipse instances.
 
+## Release / distribution
+
+CI (`.github/workflows/build.yml`) publishes `com.kcube.link.update-site/target/repository` to the `gh-pages` branch on `main` pushes and `v*` tags, and `dist/*` to a GitHub Release on `v*` tags. The GitHub repo's Pages source must be "Deploy from a branch" → `gh-pages` (not "GitHub Actions"), otherwise `https://leejy-jpg.github.io/kcube-link-explorer/` returns 404.
+
 ## What the plugin does
 
 "KCube Link Explorer" is a Package Explorer–like Eclipse view. Its core feature: **dragging a project onto a folder/project in the view creates a link to it** (OS symbolic link, or an Eclipse Linked Resource).

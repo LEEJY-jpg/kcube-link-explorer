@@ -70,6 +70,14 @@ mvn -q -B clean verify
 - `com.kcube.link.kcube-link-explorer-<version>.jar`: 플러그인
 - `kcube-link-explorer-update-site-<version>.zip`: 업데이트 사이트
 
+## 배포 (GitHub)
+
+`.github/workflows/build.yml` 이 `main` 푸시와 `v*` 태그마다 빌드하고 p2 업데이트 사이트를 `gh-pages` 브랜치에 게시합니다. `v*` 태그에서는 jar 와 zip 을 GitHub Release 에도 올립니다.
+
+저장소 최초 1회 설정: `Settings > Pages > Build and deployment > Source` 를 `Deploy from a branch` 로 바꾸고, Branch 를 `gh-pages` / `/ (root)` 로 지정합니다. `GitHub Actions` 로 두면 업데이트 사이트 URL 이 404 가 됩니다.
+
+릴리스: 버전(`MANIFEST.MF`, `feature.xml`, `pom.xml`)을 맞춘 뒤 `git tag -a v<major.minor.micro>` 로 태그를 만들어 푸시합니다.
+
 ## 프로젝트 구조
 
 Maven Tycho 4.0.13 기반 Eclipse 플러그인입니다.
