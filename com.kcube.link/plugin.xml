@@ -10,7 +10,7 @@
       <view
          allowMultiple="false"
          category="com.kcube.category"
-         class="org.eclipse.ui.navigator.CommonNavigator"
+         class="com.kcube.link.views.LinkExplorerView"
          id="com.kcube.link.views.explorer"
          name="Link Explorer"
          restorable="true"/>
@@ -20,11 +20,11 @@
    <extension point="org.eclipse.ui.navigator.navigatorContent">
       <navigatorContent
          activeByDefault="true"
-         contentProvider="org.eclipse.ui.model.BaseWorkbenchContentProvider"
+         contentProvider="com.kcube.link.navigator.EmptyContentProvider"
          id="com.kcube.link.navigatorContent"
-         labelProvider="org.eclipse.ui.model.WorkbenchLabelProvider"
+         labelProvider="com.kcube.link.navigator.NullLabelProvider"
          name="KCube Link Content"
-         priority="low">
+         priority="highest">
          <triggerPoints>
             <instanceof value="org.eclipse.core.resources.IResource"/>
          </triggerPoints>
@@ -46,6 +46,9 @@
          <includes>
             <contentExtension pattern="org.eclipse.jdt.java.ui.javaContent"/>
             <contentExtension pattern="org.eclipse.ui.navigator.resourceContent"/>
+            <contentExtension pattern="org.eclipse.ui.navigator.resources.filters.*"/>
+            <contentExtension pattern="org.eclipse.ui.navigator.resources.linkHelper"/>
+            <contentExtension pattern="org.eclipse.ui.navigator.resources.workingSets"/>
             <contentExtension pattern="com.kcube.link.navigatorContent"/>
          </includes>
       </viewerContentBinding>
@@ -54,14 +57,24 @@
             <actionExtension pattern="org.eclipse.ui.navigator.resources.*"/>
          </includes>
       </viewerActionBinding>
-      <popupMenu
-         allowsPlatformContributions="true"
-         id="com.kcube.link.views.explorer#PopupMenu">
-         <insertionPoint name="group.new"/>
-         <insertionPoint name="group.open" separator="true"/>
-         <insertionPoint name="group.edit" separator="true"/>
-         <insertionPoint name="additions" separator="true"/>
-      </popupMenu>
+      <viewer viewerId="com.kcube.link.views.explorer">
+         <popupMenu
+            allowsPlatformContributions="true"
+            id="com.kcube.link.views.explorer#PopupMenu">
+            <insertionPoint name="group.new"/>
+            <insertionPoint name="group.open" separator="true"/>
+            <insertionPoint name="group.edit" separator="true"/>
+            <insertionPoint name="additions" separator="true"/>
+         </popupMenu>
+      </viewer>
+   </extension>
+
+   <!-- Open Perspective 목록에 표시되는 퍼스펙티브 -->
+   <extension point="org.eclipse.ui.perspectives">
+      <perspective
+         class="com.kcube.link.perspectives.LinkExplorerPerspective"
+         id="com.kcube.link.perspective"
+         name="Link Explorer"/>
    </extension>
 
    <!-- Unlink 명령 -->
