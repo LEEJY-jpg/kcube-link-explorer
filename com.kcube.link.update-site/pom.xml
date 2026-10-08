@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>com.kcube</groupId>
+        <artifactId>kcube-link-explorer-parent</artifactId>
+        <version>1.0.0-SNAPSHOT</version>
+    </parent>
+    <artifactId>com.kcube.link.update-site</artifactId>
+    <packaging>eclipse-repository</packaging>
+
+    <build>
+        <plugins>
+            <!-- 마지막 모듈에서 플러그인 jar 와 update-site zip 을 루트 dist/ 로 모은다 (파일명은 qualifier 제외 버전). -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-antrun-plugin</artifactId>
+                <version>3.1.0</version>
+                <executions>
+                    <execution>
+                        <id>collect-dist</id>
+                        <phase>verify</phase>
+                        <goals>
+                            <goal>run</goal>
+                        </goals>
+                        <configuration>
+                            <target>
+                                <property name="dist" location="${project.basedir}/../dist"/>
+                                <delete dir="${dist}"/>
+                                <mkdir dir="${dist}"/>
+                                <copy file="${project.basedir}/../com.kcube.link/target/com.kcube.link-${project.version}.jar"
+                                      tofile="${dist}/com.kcube.link.kcube-link-explorer-${unqualifiedVersion}.jar"/>
+                                <copy file="${project.build.directory}/${project.artifactId}-${project.version}.zip"
+                                      tofile="${dist}/kcube-link-explorer-update-site-${unqualifiedVersion}.zip"/>
+                            </target>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+</project>

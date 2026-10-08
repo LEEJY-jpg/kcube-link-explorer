@@ -1,0 +1,121 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?eclipse version="3.4"?>
+<plugin>
+
+   <!-- 뷰 카테고리 + 뷰 등록: CommonNavigator 기반 -->
+   <extension point="org.eclipse.ui.views">
+      <category
+         id="com.kcube.category"
+         name="KCube"/>
+      <view
+         allowMultiple="false"
+         category="com.kcube.category"
+         class="com.kcube.link.views.LinkExplorerView"
+         id="com.kcube.link.views.explorer"
+         icon="icons/link.png"
+         name="Link Explorer"
+         restorable="true"/>
+   </extension>
+
+   <!-- 드롭 어시스턴트 -->
+   <extension point="org.eclipse.ui.navigator.navigatorContent">
+      <navigatorContent
+         activeByDefault="true"
+         contentProvider="com.kcube.link.navigator.EmptyContentProvider"
+         id="com.kcube.link.navigatorContent"
+         labelProvider="com.kcube.link.navigator.NullLabelProvider"
+         name="KCube Link Content"
+         priority="highest">
+         <triggerPoints>
+            <instanceof value="org.eclipse.core.resources.IResource"/>
+         </triggerPoints>
+         <dropAssistant
+            class="com.kcube.link.dnd.ProjectLinkDropAssistant"
+            id="com.kcube.link.dropAssistant">
+            <possibleDropTargets>
+               <or>
+                  <adapt type="org.eclipse.core.resources.IContainer"/>
+               </or>
+            </possibleDropTargets>
+         </dropAssistant>
+      </navigatorContent>
+   </extension>
+
+   <!-- 뷰에 JDT + 리소스 + 자체 콘텐츠 바인딩 -->
+   <extension point="org.eclipse.ui.navigator.viewer">
+      <viewerContentBinding viewerId="com.kcube.link.views.explorer">
+         <includes>
+            <contentExtension pattern="org.eclipse.jdt.java.ui.javaContent"/>
+            <contentExtension pattern="org.eclipse.ui.navigator.resourceContent"/>
+            <contentExtension pattern="org.eclipse.ui.navigator.resources.filters.*"/>
+            <contentExtension pattern="org.eclipse.ui.navigator.resources.linkHelper"/>
+            <contentExtension pattern="org.eclipse.ui.navigator.resources.workingSets"/>
+            <contentExtension pattern="com.kcube.link.navigatorContent"/>
+         </includes>
+      </viewerContentBinding>
+      <viewerActionBinding viewerId="com.kcube.link.views.explorer">
+         <includes>
+            <actionExtension pattern="org.eclipse.ui.navigator.resources.*"/>
+         </includes>
+      </viewerActionBinding>
+      <viewer viewerId="com.kcube.link.views.explorer">
+         <popupMenu
+            allowsPlatformContributions="true"
+            id="com.kcube.link.views.explorer#PopupMenu">
+            <insertionPoint name="group.new"/>
+            <insertionPoint name="group.open" separator="true"/>
+            <insertionPoint name="group.edit" separator="true"/>
+            <insertionPoint name="additions" separator="true"/>
+         </popupMenu>
+      </viewer>
+   </extension>
+
+   <!-- Open Perspective 목록에 표시되는 퍼스펙티브 -->
+   <extension point="org.eclipse.ui.perspectives">
+      <perspective
+         class="com.kcube.link.perspectives.LinkExplorerPerspective"
+         icon="icons/link.png"
+         id="com.kcube.link.perspective"
+         name="Link Explorer"/>
+   </extension>
+
+   <!-- Unlink 명령 -->
+   <extension point="org.eclipse.ui.commands">
+      <command
+         id="com.kcube.link.commands.unlink"
+         name="Unlink"/>
+   </extension>
+   <extension point="org.eclipse.ui.handlers">
+      <handler
+         class="com.kcube.link.handlers.UnlinkHandler"
+         commandId="com.kcube.link.commands.unlink"/>
+   </extension>
+   <extension point="org.eclipse.ui.menus">
+      <menuContribution locationURI="popup:com.kcube.link.views.explorer#PopupMenu?after=additions">
+         <command
+            commandId="com.kcube.link.commands.unlink"
+            label="Unlink"
+            style="push">
+            <visibleWhen checkEnabled="false">
+               <with variable="selection">
+                  <iterate ifEmpty="false" operator="and">
+                     <adapt type="org.eclipse.core.resources.IResource"/>
+                  </iterate>
+               </with>
+            </visibleWhen>
+         </command>
+      </menuContribution>
+   </extension>
+
+   <!-- 환경설정 -->
+   <extension point="org.eclipse.ui.preferencePages">
+      <page
+         class="com.kcube.link.preferences.LinkPreferencePage"
+         id="com.kcube.link.preferences.page"
+         name="KCube Link Explorer"/>
+   </extension>
+   <extension point="org.eclipse.core.runtime.preferences">
+      <initializer class="com.kcube.link.preferences.PreferenceInitializer"/>
+   </extension>
+
+</plugin>
