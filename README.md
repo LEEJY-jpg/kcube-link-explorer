@@ -46,6 +46,13 @@ JDK 17 이 필요합니다. `build.sh` 가 `JAVA_HOME` 을 JDK 17 로 설정합�
 ./build.sh --install   # 빌드 후 $ECLIPSE_HOME/dropins 에 jar 복사
 ```
 
+Windows 에서는 `build.bat` 을 사용합니다. `JAVA_HOME` 은 직접 JDK 17 로 지정해야 하며, `--install` 에는 `ECLIPSE_HOME` (dropins 폴더가 있는 Eclipse 설치 경로) 이 필요합니다.
+
+```bat
+build.bat             :: mvn -q -B clean verify, 결과물은 dist\ 에 생성
+build.bat --install   :: 빌드 후 %ECLIPSE_HOME%\dropins 에 jar 복사
+```
+
 `mvn` 을 직접 실행할 경우 먼저 JDK 17 을 지정하세요.
 
 ```bash

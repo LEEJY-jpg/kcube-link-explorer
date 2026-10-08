@@ -13,6 +13,8 @@ Eclipse plug-in built with Maven Tycho 4.0.13 (Eclipse 2024-12 target), structur
 ./build.sh --install   # also copies the jar into $ECLIPSE_HOME/dropins (default /Applications/Eclipse.app/Contents/Eclipse)
 ```
 
+`build.bat` is the Windows equivalent (same steps; `JAVA_HOME` and, for `--install`, `ECLIPSE_HOME` must be set explicitly).
+
 Requires JDK 17 (`build.sh` sets `JAVA_HOME` via `/usr/libexec/java_home -v 17`; the default `mvn` here resolves to JDK 26, so export `JAVA_HOME` first when running `mvn` directly). There are no tests or linter; verification is `mvn clean verify` (what CI runs) plus trying the plug-in in Eclipse (Run As > Eclipse Application, or install to `dropins` and restart Eclipse with `-clean`; remove stale `com.kcube.link*` jars from `dropins/` first). Never kill the user's running Eclipse instances.
 
 ## What the plugin does
