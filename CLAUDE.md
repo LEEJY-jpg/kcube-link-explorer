@@ -34,4 +34,4 @@ Requires JDK 17 (`build.sh` sets `JAVA_HOME` via `/usr/libexec/java_home -v 17`;
 - Javadoc on methods is written in Korean with `@param` descriptions; match this style.
 - `IPath.fromOSString` and `Status.error` require Eclipse 4.29+.
 - Known pitfalls to handle: circular links (A↔B) must be detected at drop time; a linked project placed inside a source folder gets compiled twice; Windows symlinks need admin/developer mode (fallback: junction `mklink /J` or Linked Resource); OS symlinks get committed to Git as links (consider `.gitignore`).
-- Remaining ideas from section 7 of the design doc are all implemented except junction (`mklink /J`) fallback on Windows and `.gitignore` handling for symlinks.
+- Remaining ideas from section 7 of the design doc are all implemented except `.gitignore` handling for symlinks. On Windows, `LinkService` falls back from symlink to a junction (`cmd /c mklink /J`) when privileges are missing, and `isLinkPath` treats junctions as links.

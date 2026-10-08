@@ -4,6 +4,8 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.LinkOption;
 import java.nio.file.Path;
+import java.nio.file.attribute.BasicFileAttributes;
+import java.nio.charset.Charset;
 
 import org.eclipse.core.resources.IContainer;
 import org.eclipse.core.resources.IFolder;
@@ -26,6 +28,9 @@ public final class LinkService {
 
 	/** 로거 */
 	private static final Logger _log = LoggerFactory.getLogger(LinkService.class);
+
+	/** Windows 여부 */
+	private static final boolean IS_WINDOWS = System.getProperty("os.name", "").toLowerCase().startsWith("windows");
 
 	private LinkService() {
 	}
@@ -98,7 +103,30 @@ public final class LinkService {
 			return true;
 		}
 		IPath location = resource.getLocation();
-		return location != null && Files.isSymbolicLink(location.toPath());
+		return location != null && isLinkPath(location.toPath());
+	}
+
+	/**
+	 * 경로가 OS 심볼릭 링크 또는 Windows junction 인지 확인한다.
+	 *
+	 * @param path 검사할 경로
+	 * @return 링크이면 true
+	 */
+	static boolean isLinkPath(Path path) {
+		if (Files.isSymbolicLink(path)) {
+			return true;
+		}
+		if (!IS_WINDOWS) {
+			return false;
+		}
+		try {
+			// JDK 는 junction 을 심볼릭 링크로 보지 않고 reparse point 디렉터리(isOther)로 보고한다.
+			BasicFileAttributes attrs = Files.readAttributes(path, BasicFileAttributes.class,
+					LinkOption.NOFOLLOW_LINKS);
+			return attrs.isDirectory() && attrs.isOther();
+		} catch (IOException e) {
+			return false;
+		}
 	}
 
 	/**
@@ -143,13 +171,46 @@ public final class LinkService {
 		}
 		try {
 			Files.createSymbolicLink(link, original);
-		} catch (IOException | UnsupportedOperationException e) {
-			throw new CoreException(error("Failed to create symlink " + link
-					+ " (Windows needs administrator rights or developer mode)", e));
+		} catch (IOException | UnsupportedOperationException | SecurityException e) {
+			if (!IS_WINDOWS) {
+				throw new CoreException(error("Failed to create symlink " + link, e));
+			}
+			// Windows 에서 권한(관리자/개발자 모드)이 없으면 권한이 필요 없는 junction 으로 대체한다.
+			if (_log.isInfoEnabled()) {
+				_log.info("Symlink failed ({}), falling back to junction: {}", e.getMessage(), link);
+			}
+			createJunction(link, original, e);
 		}
 		dest.refreshLocal(IResource.DEPTH_ONE, monitor);
 		if (_log.isInfoEnabled()) {
 			_log.info("Symlink created: {} -> {}", link, original);
+		}
+	}
+
+	/**
+	 * Windows junction 을 생성한다 (mklink /J). 디렉터리 전용이며 관리자 권한이 필요 없다.
+	 *
+	 * @param link     만들 junction 경로
+	 * @param original 원본 디렉터리
+	 * @param cause    심볼릭 링크 생성 실패 원인
+	 */
+	private static void createJunction(Path link, Path original, Exception cause) throws CoreException {
+		try {
+			Process process = new ProcessBuilder("cmd.exe", "/c", "mklink", "/J", link.toString(),
+					original.toString()).redirectErrorStream(true).start();
+			String output = new String(process.getInputStream().readAllBytes(), Charset.defaultCharset()).trim();
+			if (process.waitFor() != 0 || !Files.exists(link)) {
+				throw new CoreException(error("Failed to create symlink or junction " + link + " (" + output
+						+ "). Enable Windows developer mode, or use the Linked Resource link type.", cause));
+			}
+		} catch (IOException e) {
+			throw new CoreException(error("Failed to create junction " + link, e));
+		} catch (InterruptedException e) {
+			Thread.currentThread().interrupt();
+			throw new CoreException(error("Interrupted while creating junction " + link, e));
+		}
+		if (_log.isInfoEnabled()) {
+			_log.info("Junction created: {} -> {}", link, original);
 		}
 	}
 
@@ -185,7 +246,7 @@ public final class LinkService {
 		}
 		try (var children = Files.newDirectoryStream(dir)) {
 			for (Path child : children) {
-				if (Files.isSymbolicLink(child) && child.toRealPath().equals(target)) {
+				if (isLinkPath(child) && child.toRealPath().equals(target)) {
 					return true;
 				}
 			}
