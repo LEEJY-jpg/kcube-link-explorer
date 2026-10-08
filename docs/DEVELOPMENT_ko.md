@@ -34,7 +34,8 @@ Eclipse 플러그인(PDE)으로 개발할 수 있으며, 모두 공개 API로 �
 | 이클립스 프로젝트명 | `com.kcube.link` |
 | 번들 ID (Bundle-SymbolicName) | `com.kcube.link` |
 | 기본 패키지 | `com.kcube.link` |
-| 뷰 이름 | `Link Explorer` |
+| 뷰 이름 | `[KCube Link Explorer]` |
+| 퍼스펙티브 이름 | `[KCube Link Explorer]` |
 | 뷰 ID | `com.kcube.link.views.explorer` |
 | 뷰 카테고리 ID / 이름 | `com.kcube.category` / `KCube` |
 | 네비게이터 콘텐츠 ID | `com.kcube.link.navigatorContent` |
@@ -73,7 +74,7 @@ com.kcube.link.preferences  // 환경설정 페이지
   <extension point="org.eclipse.ui.views">
     <category id="com.kcube.category" name="KCube"/>
     <view id="com.kcube.link.views.explorer"
-          name="Link Explorer"
+          name="[KCube Link Explorer]"
           class="org.eclipse.ui.navigator.CommonNavigator"
           category="com.kcube.category"/>
   </extension>

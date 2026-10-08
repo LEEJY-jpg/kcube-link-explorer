@@ -13,7 +13,7 @@
          class="com.kcube.link.views.LinkExplorerView"
          id="com.kcube.link.views.explorer"
          icon="icons/link.png"
-         name="Link Explorer"
+         name="[KCube Link Explorer]"
          restorable="true"/>
    </extension>
 
@@ -76,7 +76,7 @@
          class="com.kcube.link.perspectives.LinkExplorerPerspective"
          icon="icons/link.png"
          id="com.kcube.link.perspective"
-         name="Link Explorer"/>
+         name="[KCube Link Explorer]"/>
    </extension>
 
    <!-- Unlink 명령 -->

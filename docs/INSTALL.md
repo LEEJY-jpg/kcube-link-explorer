@@ -31,7 +31,7 @@
 
 - 이전 버전이 설치되어 있다면 `dropins/` 에서 `com.kcube.link*` jar를 먼저 삭제하세요.
 - 복사 후 Eclipse를 **`-clean` 옵션으로 재시작**해야 인식됩니다.
-- 설치 후 `Window > Show View > Other... > KCube > Link Explorer` 에서 뷰를 엽니다.
+- 설치 후 `Window > Show View > Other... > KCube > [KCube Link Explorer]` 에서 뷰를 엽니다.
 
 ## macOS
 

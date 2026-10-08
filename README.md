@@ -10,7 +10,7 @@ Package Explorer 와 비슷한 Eclipse 뷰입니다. **프로젝트를 폴더/�
 - **Unlink**: 우클릭 메뉴에서 링크만 제거 (원본 프로젝트는 삭제하지 않음)
 - **검증**: 자기 자신을 가리키는 링크와 순환 링크(A↔B)를 드롭 시점에 차단
 - **JDT 지원**: Java 요소(패키지, 클래스 등)를 Package Explorer 처럼 표시
-- **전용 퍼스펙티브**: `Link Explorer` 퍼스펙티브 제공
+- **전용 퍼스펙티브**: `[KCube Link Explorer]` 퍼스펙티브 제공
 
 ## 요구 사항
 
@@ -30,7 +30,7 @@ https://leejy-jpg.github.io/kcube-link-explorer/
 
 ## 사용 방법
 
-1. `Window > Show View > Other... > KCube > Link Explorer` 로 뷰를 엽니다.
+1. `Window > Show View > Other... > KCube > [KCube Link Explorer]` 로 뷰를 엽니다.
 2. 링크할 프로젝트를 대상 폴더/프로젝트로 드래그합니다.
 3. 링크를 제거하려면 링크를 우클릭하고 `Unlink` 를 선택합니다.
 4. 링크 방식은 `Window > Preferences > KCube Link Explorer` 의 *Link type on drop* 에서 변경합니다.
